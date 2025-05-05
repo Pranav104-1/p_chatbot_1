@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chatbot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            background:black;
+            color: white;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        h2 {
+            color: #333;
+        }
+        
+        #chatForm {
+            margin-bottom: 20px;
+        }
+        
+        input {
+            border:1px white solid;
+            color: white;
+            font-size: 18px;
+            padding: 10px;
+            width: 300px;
+            height: 35px;
+            border-radius: 15px;
+            background:transparent;
+        }
+        
+        button {
+            padding: 10px;
+            background:rgb(183, 188, 170);
+            color: black;
+            border: none;
+            cursor: pointer;
+            border-radius: 20px;
+            width:100px;
+            height: 45px;
+            font-size: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 1);
+        }
+        
+        button:hover {
+            background: rgb(140, 182, 183);
+        }
+        
+        #outputContainer {
+            width: 70%;
+            margin: 30px auto 0 auto;
+            padding: 20px 30px;
+            background:transparent white;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            min-height: 400px;
+            font-size: 18px;
+            color:white;
+            line-height: 1.6;
+            backdrop-filter: blur(5px);
+            overflow-y: auto;
+            max-height: 400px;
+        }
+        pre {
+            background-color: #f7f7f7;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+        }
+        code {
+            color: #333;
+        }
+               
+    </style>
+    <script>
+        async function sendPrompt() {
+            let userPrompt = document.getElementById("promptInput").value.trim();  
+            
+            if (!userPrompt) {
+                document.getElementById("outputContainer").innerHTML = "<strong>Please enter a prompt!</strong>";
+                return;
+            }
+    
+            let response = await fetch("/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ prompt: userPrompt })
+            });
+    
+            try {
+                let result = await response.json();
+                console.log("Received JSON:", result);
+    
+                if (result.response) {
+                    let formatted = formatOutput(result.response);
+                    document.getElementById("outputContainer").innerHTML = "<strong>Assistant:</strong><br>" + formatted;
+                } else {
+                    document.getElementById("outputContainer").innerHTML = "<strong>Error:</strong> " + (result.error || "Unexpected error.");
+                }
+            } catch (error) {
+                console.error("Error parsing JSON:", error);
+                document.getElementById("outputContainer").innerHTML = "<strong>Error:</strong> Failed to fetch response.";
+            }
+        }
+    
+       
+        function formatOutput(text) {
+            const codeRegex = /(<\/?[^>]+>|```[\s\S]*?```)/g; 
+    
+            
+            if (text.includes("<html") || text.includes("</html>") || text.includes("<body>") || text.includes("<script>") || text.includes("```")) {
+                let escapedText = escapeHtml(text);
+    
+                return `<pre style="text-align:left; background:#f0f0f0; padding:15px; border-radius:10px; overflow-x:auto;"><code>${escapedText}</code></pre>`;
+            } else {
+                return text
+                    .replace(/\n/g, "<br>")   
+                    .replace(/\s{2,}/g, " "); 
+            }
+        }
+    
+        
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;")
+                       .replace(/</g, "&lt;")
+                       .replace(/>/g, "&gt;")
+                       .replace(/"/g, "&quot;")
+                       .replace(/'/g, "&#039;");
+        }
+    </script>
+    
+</head>
+<body>
+    <h2>Pranav's chatbot</h2>
+    <form id="chatForm">
+        <input type="text" id="promptInput" name="prompt" placeholder="Enter your prompt">
+        <br>
+        <br>
+        <button type="button" onclick="sendPrompt()">Submit</button>
+    </form>
+    <div id="outputContainer">ASSISTANT:- </div> <!-- Output Box -->
+</body>
+</html>
